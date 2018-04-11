@@ -29,9 +29,9 @@ class totem_detection_node():
 			return
 		#print "process"
 		try:
-      			self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
-    		except CvBridgeError as e:
-      			print(e)
+			self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
+		except CvBridgeError as e:
+			print(e)
 		
 def main(args):
 	ic = totem_detection_node()
