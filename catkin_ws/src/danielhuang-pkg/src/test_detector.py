@@ -32,11 +32,11 @@ class totem_detection_node():
 		img = self.cv_image
 		#print image.shape
 				
-				img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 		hsvimg = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-				GreenHSVlow = np.array([45,110,80], dtype=np.uint8)
-				GreenHSVhigh = np.array([60,200,200], dtype=np.uint8)
-				green_threshed = cv2.inRange(hsvimg, GreenHSVlow, GreenHSVhigh)
+		GreenHSVlow = np.array([45,110,80], dtype=np.uint8)
+		GreenHSVhigh = np.array([60,200,200], dtype=np.uint8)
+		green_threshed = cv2.inRange(hsvimg, GreenHSVlow, GreenHSVhigh)
 		RedHSVlow = np.array([0,100,100], dtype=np.uint8)
 		RedHSVhigh = np.array([20,255,255], dtype=np.uint8)
 		red_threshed = cv2.inRange(hsvimg, RedHSVlow, RedHSVhigh)
