@@ -74,7 +74,7 @@ class totem_detection_node():
 			area = cv2.contourArea(cnt)
 			if area > largest_green_area:
 				#print index, area
-			gflag = 1
+				gflag = 1
 				largest_green_area = area
 				largest_green_index = index
 		for index in range(len(red_contours)):
@@ -83,7 +83,7 @@ class totem_detection_node():
 			if area > largest_red_area:
 				#print index, area
 				rflag = 1
-			largest_red_area = area 
+				largest_red_area = area 
 				largest_red_index = index
 		
 		if gflag == 0 or rflag == 0:
