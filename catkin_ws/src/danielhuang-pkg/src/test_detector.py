@@ -29,7 +29,7 @@ class totem_detection_node():
 		if type(self.cv_image) == np.int:
 			return
 		self.lock = 1
-		img = self.cv_image
+		img = copy.copy(self.cv_image)
 		#print image.shape
 				
 		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -53,13 +53,13 @@ class totem_detection_node():
 
 		if len(green_contours) == 0:
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
 			except CvBridgeError as e:
 				print(e)
 			return
 		if len(red_contours) == 0:
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(mg, "bgr8"))
 			except CvBridgeError as e:
 				print(e)
 			return
