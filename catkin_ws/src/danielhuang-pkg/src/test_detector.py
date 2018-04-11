@@ -54,15 +54,17 @@ class totem_detection_node():
 		if len(green_contours) == 0:
 			try:
 				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+				return
 			except CvBridgeError as e:
 				print(e)
-			return
+			
 		if len(red_contours) == 0:
 			try:
 				self.img_pub.publish(self.bridge.cv2_to_imgmsg(mg, "bgr8"))
+				return
 			except CvBridgeError as e:
 				print(e)
-			return
+
 		gflag = 0
 		rflag = 0
 		largest_green_area = 2000
@@ -113,10 +115,11 @@ class totem_detection_node():
 
 		try:
 			self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+			self.lock = 0
 		except CvBridgeError as e:
 			print(e)
 
-		self.lock = 0
+		
 def main(args):
 	ic = totem_detection_node()
 	rospy.init_node('totem_detection_node', anonymous = True)        
