@@ -2,6 +2,7 @@
 import rospy
 from sensor_msgs.msg import Image
 import numpy as np
+import copy
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import sys
@@ -9,24 +10,25 @@ import sys
 class totem_detection_node():
 	def __init__(self):
 		self.img_sub = rospy.Subscriber("/rickbot/camera_node/image", Image, self.img_cb)
-		self.img_pub = rospy.Publisher("totem_center",Image)
+		self.img_pub = rospy.Publisher("totem_center",Image,queue_size=10)
 		self.bridge = CvBridge()
 		self.cv_image = 0
-		
+		self.lock = 0	
 		
 
 	def img_cb(self, data):
-		#print "Image callback"
-		try:
-			self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+		if self.lock == 0:
+			#print "Image callback"
+			try:
+				self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
 
-		except CvBridgeError as e:
-			print(e)
+			except CvBridgeError as e:
+				print(e)
 	
 	def process(self):
 		if type(self.cv_image) == np.int:
 			return
-
+		self.lock = 1
 		img = self.cv_image
 		#print image.shape
                 
@@ -49,6 +51,20 @@ class totem_detection_node():
 		_,green_contours,green_hierarchy = cv2.findContours(green_dilation, 1, 2)
 		_,red_contours,red_hierarchy = cv2.findContours(red_dilation, 1, 2)
 
+		if len(green_contours) == 0:
+      try:
+		        self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+		  except CvBridgeError as e:
+      			print(e)
+			return
+		if len(red_contours) == 0:
+      try:
+		        self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+		  except CvBridgeError as e:
+      			print(e)
+			return
+		gflag = 0
+		rflag = 0
 		largest_green_area = 2000
 		largest_red_area = 2000
 		largest_green_index = 0
@@ -58,6 +74,7 @@ class totem_detection_node():
 		    area = cv2.contourArea(cnt)
 		    if area > largest_green_area:
 	        	#print index, area
+			gflag = 1
 	        	largest_green_area = area
 	        	largest_green_index = index
 		for index in range(len(red_contours)):
@@ -65,8 +82,17 @@ class totem_detection_node():
 		    area = cv2.contourArea(cnt)
 		    if area > largest_red_area:
 		        #print index, area
-		        largest_red_area = area 
+		        rflag = 1
+			largest_red_area = area 
 		        largest_red_index = index
+		
+		if gflag == 0 or rflag == 0:
+			
+			try:
+		        self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+		  except CvBridgeError as e:
+      			print(e)
+			return
 		#print largest_green_index, largest_red_index
 		green_totem_contour = green_contours[largest_green_index]
 		red_totem_contour = red_contours[largest_red_index]
@@ -81,15 +107,16 @@ class totem_detection_node():
 		red_cy = int(red_M['m01']/red_M['m00'])
 
 		output_img = copy.copy(img)
-		_ = cv2.circle(tmp2,(green_cx, green_cy),5,(0,255,0),2)
-		_ = cv2.circle(tmp2,(red_cx, red_cy),5,(255,0,0),2)
+		_ = cv2.circle(output_img,(green_cx, green_cy),5,(0,255,0),2)
+		_ = cv2.circle(output_img,(red_cx, red_cy),5,(255,0,0),2)
 		_ = cv2.circle(output_img,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
 
 		try:
-      			self.image_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
-    		except CvBridgeError as e:
+		        self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+		except CvBridgeError as e:
       			print(e)
 
+		self.lock = 0
 def main(args):
 	ic = totem_detection_node()
 	rospy.init_node('totem_detection_node', anonymous = True)        

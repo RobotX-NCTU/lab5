@@ -2,6 +2,7 @@
 import rospy
 from sensor_msgs.msg import Image
 import numpy as np
+import copy
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import sys
@@ -26,9 +27,9 @@ class totem_detection_node():
 	def process(self):
 		if type(self.cv_image) == np.int:
 			return
-
+		#print "process"
 		try:
-      			self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
+      			self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
     		except CvBridgeError as e:
       			print(e)
 		
@@ -38,6 +39,7 @@ def main(args):
 	try:
 		while (1):
 			ic.process()
+			rospy.sleep(0.1)
 	except KeyboardInterrupt:
 		print("Shutting down")
 
