@@ -32,6 +32,9 @@ class totem_detection_node():
 		self.lock = 1
 		img = copy.copy(self.cv_image)
 		self.lock = 0
+
+		####### ADD YOUR CODE HERE #######
+
 		try:
 			self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
 		except CvBridgeError as e:
