@@ -84,7 +84,7 @@ class totem_detection_node():
 		cv2.circle(img,(green_cx, green_cy),5,(0,255,0),2)
 		cv2.circle(img,(red_cx, red_cy),5,(255,0,0),2)
 
-		_ = cv2.circle(output_img,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
+		_ = cv2.circle(img,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
 
 
 		try:
