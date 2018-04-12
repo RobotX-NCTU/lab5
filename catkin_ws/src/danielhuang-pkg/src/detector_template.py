@@ -13,21 +13,25 @@ class totem_detection_node():
 		self.img_pub = rospy.Publisher("totem_center",Image)
 		self.bridge = CvBridge()
 		self.cv_image = 0
-		
+		self.lock = 0
 		
 
 	def img_cb(self, data):
 		#print "Image callback"
-		try:
-			self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+		if self.lock == 0:
+			try:
+				self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
 
-		except CvBridgeError as e:
-			print(e)
+			except CvBridgeError as e:
+				print(e)
 	
 	def process(self):
 		if type(self.cv_image) == np.int:
 			return
 		#print "process"
+		self.lock = 1
+		img = copy.copy(self.cv_image)
+		self.lock = 0
 		try:
 			self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
 		except CvBridgeError as e:

@@ -30,6 +30,7 @@ class totem_detection_node():
 			return
 		self.lock = 1
 		img = copy.copy(self.cv_image)
+		self.lock = 0
 		#print image.shape
 				
 		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -115,7 +116,6 @@ class totem_detection_node():
 
 		try:
 			self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
-			self.lock = 0
 		except CvBridgeError as e:
 			print(e)
 
