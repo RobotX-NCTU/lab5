@@ -10,7 +10,7 @@ import sys
 class totem_detection_node():
 	def __init__(self):
 		self.img_sub = rospy.Subscriber("/kada/camera_node/image", Image, self.img_cb)
-		self.img_pub = rospy.Publisher("totem_center",Image)
+		self.img_pub = rospy.Publisher("totem_center",Image,queue_size=10)
 		self.bridge = CvBridge()
 		self.cv_image = 0
 		self.lock = 0
@@ -72,7 +72,7 @@ class totem_detection_node():
 				self.img_pub.publish(self.bridge.cv2_to_imgmsg(mg, "bgr8"))
 				return
 			except CvBridgeError as e:
-print(e)		
+				print(e)		
 		
 		#find largest contour(if multiply contours are detected)
 		gflag = 0
@@ -104,7 +104,7 @@ print(e)
 				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
 			except CvBridgeError as e:
 				print(e)
-return		
+			return		
 
 		#print largest_green_index, largest_red_index
 		green_totem_contour = green_contours[largest_green_index]
