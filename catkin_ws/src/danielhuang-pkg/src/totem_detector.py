@@ -54,22 +54,22 @@ class totem_detection_node():
 
 		if len(green_contours) == 0:
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 				return
 			except CvBridgeError as e:
 				print(e)
 			
 		if len(red_contours) == 0:
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(mg, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 				return
 			except CvBridgeError as e:
 				print(e)
 
 		gflag = 0
 		rflag = 0
-		largest_green_area = 2000
-		largest_red_area = 2000
+		largest_green_area = 500
+		largest_red_area = 500
 		largest_green_index = 0
 		largest_red_index = 0
 		for index in range(len(green_contours)):
@@ -92,7 +92,7 @@ class totem_detection_node():
 		if gflag == 0 or rflag == 0:
 			
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 			except CvBridgeError as e:
 				print(e)
 			return
@@ -115,7 +115,7 @@ class totem_detection_node():
 		_ = cv2.circle(output_img,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
 
 		try:
-			self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "bgr8"))
+			self.img_pub.publish(self.bridge.cv2_to_imgmsg(output_img, "rgb8"))
 		except CvBridgeError as e:
 			print(e)
 
