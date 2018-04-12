@@ -10,17 +10,19 @@ import sys
 class totem_detection_node():
 	def __init__(self):
 		self.img_sub = rospy.Subscriber("/rickbot/camera_node/image", Image, self.img_cb)
-		self.img_pub = rospy.Publisher("totem_center",Image)
+		self.img_pub = rospy.Publisher("totem_center",Image,queue_size=10)
 		self.bridge = CvBridge()
 		self.cv_image = 0
 		self.lock = 0
+		self.time_stamp = None
 		
 
 	def img_cb(self, data):
-		#print "Image callback"
 		if self.lock == 0:
+			#print "Image callback"
 			try:
 				self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+				self.time_stamp = data.header.stamp
 
 			except CvBridgeError as e:
 				print(e)
@@ -28,12 +30,12 @@ class totem_detection_node():
 	def process(self):
 		if type(self.cv_image) == np.int:
 			return
-		#print "process"
 		self.lock = 1
 		img = copy.copy(self.cv_image)
 		self.lock = 0
-
-				img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		#print image.shape
+				
+		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 		hsvimg = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 		GreenHSVlow = np.array([45,110,80], dtype=np.uint8)
 		GreenHSVhigh = np.array([60,200,200], dtype=np.uint8)
@@ -54,22 +56,22 @@ class totem_detection_node():
 
 		if len(green_contours) == 0:
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 				return
 			except CvBridgeError as e:
 				print(e)
 			
 		if len(red_contours) == 0:
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(mg, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 				return
 			except CvBridgeError as e:
 				print(e)
 
 		gflag = 0
 		rflag = 0
-		largest_green_area = 2000
-		largest_red_area = 2000
+		largest_green_area = 300
+		largest_red_area = 300
 		largest_green_index = 0
 		largest_red_index = 0
 		for index in range(len(green_contours)):
@@ -92,7 +94,7 @@ class totem_detection_node():
 		if gflag == 0 or rflag == 0:
 			
 			try:
-				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+				self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 			except CvBridgeError as e:
 				print(e)
 			return
@@ -115,9 +117,12 @@ class totem_detection_node():
 		_ = cv2.circle(output_img,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
 
 		try:
-			self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
+			img_msg = self.bridge.cv2_to_imgmsg(output_img, "rgb8")
+			img_msg.header.stamp = rospy.Time.now() 
+			self.img_pub.publish(img_msg)
 		except CvBridgeError as e:
 			print(e)
+
 		
 def main(args):
 	ic = totem_detection_node()
@@ -125,7 +130,6 @@ def main(args):
 	try:
 		while (1):
 			ic.process()
-			rospy.sleep(0.1)
 	except KeyboardInterrupt:
 		print("Shutting down")
 
