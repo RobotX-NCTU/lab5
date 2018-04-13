@@ -6,6 +6,7 @@ import copy
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import sys
+import time
 
 class totem_detection_node():
 	def __init__(self):
@@ -30,12 +31,15 @@ class totem_detection_node():
 			return
 		#print "process"
 		self.lock = 1
-		img = copy.copy(self.cv_image)
+		img_raw = copy.copy(self.cv_image)
 		self.lock = 0
 
 		####### ADD YOUR CODE HERE #######
-		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-		img = cv2.GaussianBlur(img, (19, 19), 0)
+		#start_time = time.time() # start time counting
+
+		img = cv2.cvtColor(img_raw, cv2.COLOR_BGR2RGB)
+		#img = cv2.GaussianBlur(img, (19, 19), 0)
+		img = cv2.blur(img,(10,10))
 
 		hsvimg = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
@@ -50,8 +54,11 @@ class totem_detection_node():
 		_,green_contours,green_hierarchy = cv2.findContours(green_threshed, 1, 2) # no erosion and no dilation
 		_,red_contours,red_hierarchy = cv2.findContours(red_threshed, 1, 2)	 # no erosion and no dilation
 
-		largest_green_area = 500
-		largest_red_area = 500
+		# define a threshold for find the largest area
+		largest_area_threshold = 20
+
+		largest_green_area = 0
+		largest_red_area = 0
 		largest_green_index = 0
 		largest_red_index = 0
 		for index in range(len(green_contours)):
@@ -69,39 +76,50 @@ class totem_detection_node():
 		        largest_red_area = area 
 		        largest_red_index = index
 		#print largest_green_index, largest_red_index
-		green_totem_contour = green_contours[largest_green_index]
-		red_totem_contour = red_contours[largest_red_index]
 
-		green_M = cv2.moments(green_totem_contour)
-		red_M = cv2.moments(red_totem_contour)
+		if largest_red_area > largest_area_threshold and largest_green_area > largest_area_threshold:
+			green_totem_contour = green_contours[largest_green_index]
+			red_totem_contour = red_contours[largest_red_index]
 
-		green_cx = int(green_M['m10']/green_M['m00'])
-		green_cy = int(green_M['m01']/green_M['m00'])
+			green_M = cv2.moments(green_totem_contour)
+			red_M = cv2.moments(red_totem_contour)
 
-		red_cx = int(red_M['m10']/red_M['m00'])
-		red_cy = int(red_M['m01']/red_M['m00'])
+			# find centroid of totem
+			#if green_M['m00'] != 0 and red_M['m00'] !=0:
+			green_cx = int(green_M['m10']/green_M['m00'])
+			green_cy = int(green_M['m01']/green_M['m00'])
 
-		cv2.circle(img,(green_cx, green_cy),5,(0,255,0),2)
-		cv2.circle(img,(red_cx, red_cy),5,(255,0,0),2)
-
-		_ = cv2.circle(img,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
+			red_cx = int(red_M['m10']/red_M['m00'])
+			red_cy = int(red_M['m01']/red_M['m00'])
 
 
+			cv2.circle(img_raw,(green_cx, green_cy),5,(0,255,0),2)
+			cv2.circle(img_raw,(red_cx, red_cy),5,(255,0,0),2)
+
+			_ = cv2.circle(img_raw,((green_cx+red_cx)/2, (green_cy+red_cy)/2),8,(0,255,255),-1)
+		else:
+			print("no totem pair")
+		
 		try:
 			#self.img_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
-			self.img_pub.publish(self.bridge.cv2_to_imgmsg(img, "bgr8"))
+			self.img_pub.publish(self.bridge.cv2_to_imgmsg(img_raw, "bgr8"))
 		except CvBridgeError as e:
 			print(e)
+
+		#print("--- %s seconds ---" % (time.time() - start_time))
 		
 def main(args):
 	ic = totem_detection_node()
 	rospy.init_node('totem_detection_node', anonymous = True)        
-	try:
-		while (1):
+	
+	while (1):
+		try:
 			ic.process()
 			rospy.sleep(0.1)
-	except KeyboardInterrupt:
-		print("Shutting down")
+		except KeyboardInterrupt:
+			print("Shutting down")
+			break
+
 
 
 if __name__ == '__main__':
